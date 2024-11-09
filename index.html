@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Puzzles</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+
+    <style>
+        :root {
+            --color-primary: #8B4513;
+            --color-secondary: #D2B48C;
+            --color-accent: #DEB887;
+            --color-background: #FDF5E6;
+            --color-text: #4A3728;
+            --color-light-square: #E8DCC4;
+            --color-dark-square: #B68B4C;
+        }
+
+        body {
+            background-color: var(--color-background);
+            color: var(--color-text);
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(300px, 400px) minmax(600px, 1fr);
+            gap: 4rem;
+            align-items: start;
+            padding: 0 2rem;
+        }
+
+        .board-and-controls {
+            padding-left: 2rem;
+        }
+
+        .board-wrapper {
+            margin: 0 auto;
+        }
+
+        .controls-panel {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-secondary);
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+        }
+
+        .themes-select {
+            height: 8rem;
+        }
+
+        .solution-container {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-secondary);
+            margin-top: 1.5rem;
+        }
+
+        .move-list {
+            margin-top: 0.75rem;
+        }
+
+        .move-item {
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+
+        .chess-piece {
+            font-size: 2.5rem;
+            line-height: 1;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .cell-light {
+            background-color: var(--color-light-square);
+        }
+
+        .cell-dark {
+            background-color: var(--color-dark-square);
+        }
+
+        .board-border {
+            background-color: var(--color-primary);
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .board-wrapper {
+            width: 500px;
+            max-width: 90vmin;
+        }
+
+        .coordinate {
+            font-size: 0.875rem;
+            color: var(--color-primary);
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chess-board {
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+            aspect-ratio: 1;
+        }
+
+        .chess-row {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: 24px 1fr;
+            grid-template-rows: 1fr 24px;
+            gap: 4px;
+        }
+
+        .files-coordinates {
+            grid-column: 2;
+            grid-row: 2;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+
+        .ranks-coordinates {
+            grid-column: 1;
+            grid-row: 1;
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+        }
+
+        .move-active {
+            background-color: var(--color-accent);
+            color: var(--color-text);
+        }
+
+        .custom-button {
+            background-color: var(--color-primary);
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        .custom-button:hover:not(:disabled) {
+            background-color: var(--color-secondary);
+        }
+
+        .fen-display {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        select,
+        input {
+            border-color: var(--color-secondary) !important;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: var(--color-primary) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Define themes constant
+        const THEMES = [
+            "advancedPawn", "advantage", "anastasiaMate", "arabianMate", "attackingF2F7",
+            "attraction", "backRankMate", "bishopEndgame", "bodenMate", "castling",
+            "capturingDefender", "crushing", "doubleBishopMate", "dovetailMate", "equality",
+            "kingsideAttack", "clearance", "defensiveMove", "deflection", "discoveredAttack",
+            "doubleCheck", "endgame", "exposedKing", "fork", "hangingPiece", "hookMate",
+            "interference", "intermezzo", "knightEndgame", "mate", "mateIn1", "mateIn2",
+            "mateIn3", "mateIn4", "mateIn5", "middlegame", "opening", "pawnEndgame", "pin",
+            "promotion", "queenEndgame", "queenRookEndgame", "queensideAttack", "quietMove",
+            "rookEndgame", "sacrifice", "skewer", "smotheredMate", "trappedPiece",
+            "underPromotion", "xRayAttack", "zugzwang"
+        ];
+
+        function ChessPuzzleGenerator() {
+            // Keep existing state declarations
+            const [loading, setLoading] = React.useState(false);
+            const [error, setError] = React.useState(null);
+            const [board, setBoard] = React.useState(null);
+            const [fen, setFen] = React.useState(null);
+            const [rating, setRating] = React.useState(1500);
+            const [solution, setSolution] = React.useState(null);
+            const [currentMoveIndex, setCurrentMoveIndex] = React.useState(-1);
+            const [positions, setPositions] = React.useState([]);
+            const [startingFen, setStartingFen] = React.useState(null);
+            const [boardOrientation, setBoardOrientation] = React.useState(null);
+            const [playerMoves, setPlayerMoves] = React.useState(2);
+            const [selectedThemes, setSelectedThemes] = React.useState([]);
+
+            // Add useEffect for auto-play
+            React.useEffect(() => {
+                if (positions.length > 0 && currentMoveIndex === -1) {
+                    // Auto-play first move after a short delay
+                    const timer = setTimeout(() => {
+                        handleNextMove();
+                    }, 500);
+                    return () => clearTimeout(timer);
+                }
+            }, [positions]);
+
+            // Keep existing helper functions
+            const calculatePositions = (fen, moves) => {
+                const chess = new Chess(fen);
+                const positions = [fen];
+
+                moves.forEach(move => {
+                    chess.move(move, { sloppy: true });
+                    positions.push(chess.fen());
+                });
+
+                return positions;
+            };
+
+            const fetchNewPuzzle = async () => {
+                setLoading(true);
+                setError(null);
+                setSolution(null);
+                setCurrentMoveIndex(-1);
+                setPositions([]);
+                setShowSolution(false);
+
+                try {
+                    const themesParam = selectedThemes.length > 0
+                        ? encodeURIComponent(JSON.stringify(selectedThemes))
+                        : encodeURIComponent(JSON.stringify(["middlegame", "advantage", "quietMove"]));
+
+                    const response = await fetch(
+                        `https://chess-puzzles.p.rapidapi.com/?themes=${themesParam}&rating=${rating}&themesType=ALL&playerMoves=${playerMoves}&count=1`,
+                        {
+                            headers: {
+                                'x-rapidapi-key': '57b76839b6mshdb6828642d5ae55p11af1ejsncd3ac183a458',
+                                'x-rapidapi-host': 'chess-puzzles.p.rapidapi.com'
+                            }
+                        }
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch puzzle');
+                    }
+
+                    const data = await response.json();
+                    if (data.puzzles && data.puzzles[0]) {
+                        const puzzle = data.puzzles[0];
+                        const [_, turn] = puzzle.fen.split(' ');
+
+                        const shouldFlip = turn === 'w';
+                        setBoardOrientation(shouldFlip);
+
+                        setStartingFen(puzzle.fen);
+                        setFen(puzzle.fen);
+                        setSolution(puzzle.moves);
+                        setBoard(fenToBoard(puzzle.fen, shouldFlip));
+
+                        const newPositions = calculatePositions(puzzle.fen, puzzle.moves);
+                        setPositions(newPositions);
+                    } else {
+                        throw new Error('No puzzle data received');
+                    }
+                } catch (err) {
+                    setError('Failed to load puzzle. Please try again.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+
+            const handlePrevMove = () => {
+                if (currentMoveIndex > -1) {
+                    const newIndex = currentMoveIndex - 1;
+                    setCurrentMoveIndex(newIndex);
+                    const newFen = positions[newIndex + 1];
+                    setFen(newFen);
+                    setBoard(fenToBoard(newFen, boardOrientation));
+                }
+            };
+
+            const handleNextMove = () => {
+                if (currentMoveIndex < positions.length - 2) {
+                    const newIndex = currentMoveIndex + 1;
+                    setCurrentMoveIndex(newIndex);
+                    const newFen = positions[newIndex + 1];
+                    setFen(newFen);
+                    setBoard(fenToBoard(newFen, boardOrientation));
+                }
+            };
+
+            const fenToBoard = (fen, shouldFlip) => {
+                const [position] = fen.split(' ');
+                const rows = position.split('/');
+                let board = [];
+
+                for (const row of rows) {
+                    const boardRow = [];
+                    for (const char of row) {
+                        if (isNaN(char)) {
+                            boardRow.push(char);
+                        } else {
+                            for (let i = 0; i < parseInt(char); i++) {
+                                boardRow.push(null);
+                            }
+                        }
+                    }
+                    board.push(boardRow);
+                }
+
+                if (shouldFlip) {
+                    board = board.reverse();
+                    board = board.map(row => [...row].reverse());
+                }
+
+                return board;
+            };
+
+            const getPieceSymbol = (piece) => {
+                if (!piece) return null;
+
+                const pieces = {
+                    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+                    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+                };
+                return pieces[piece];
+            };
+
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+            const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+
+            const handleRatingChange = (e) => {
+                const value = parseInt(e.target.value) || 0;
+                setRating(Math.max(600, Math.min(3000, value)));
+            };
+
+            const handlePlayerMovesChange = (e) => {
+                const value = parseInt(e.target.value) || 2;
+                setPlayerMoves(Math.max(2, Math.min(4, value)));
+            };
+
+            const handleThemeChange = (e) => {
+                const options = e.target.options;
+                const selected = [];
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].selected) {
+                        selected.push(options[i].value);
+                    }
+                }
+                setSelectedThemes(selected);
+            };
+
+            const formatMove = (move, index) => {
+                if (index === 0) {
+                    return `${move}`;
+                }
+                return move;
+            };
+
+            const [showSolution, setShowSolution] = React.useState(false);
+
+
+            return (
+                <div className="app-container">
+                    <h1 className="text-4xl font-bold text-center mb-8 text-primary">Chess Puzzles</h1>
+
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="content-grid">
+                        <div className="controls-panel">
+                            <div className="space-y-6">
+                                <div className="control-group">
+                                    <label className="control-label" htmlFor="rating">
+                                        Puzzle Rating (600-3000)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="rating"
+                                        value={rating}
+                                        onChange={handleRatingChange}
+                                        min="600"
+                                        max="3000"
+                                        className="control-input"
+                                    />
+                                </div>
+
+                                <div className="control-group">
+                                    <label className="control-label" htmlFor="playerMoves">
+                                        Player Moves (2-4)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="playerMoves"
+                                        value={playerMoves}
+                                        onChange={handlePlayerMovesChange}
+                                        min="2"
+                                        max="4"
+                                        className="control-input"
+                                    />
+                                </div>
+
+                                <div className="control-group">
+                                    <label className="control-label" htmlFor="themes">
+                                        Themes
+                                    </label>
+                                    <select
+                                        id="themes"
+                                        multiple
+                                        value={selectedThemes}
+                                        onChange={handleThemeChange}
+                                        className="control-input themes-select"
+                                    >
+                                        {THEMES.map(theme => (
+                                            <option key={theme} value={theme}>
+                                                {theme}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={fetchNewPuzzle}
+                                    disabled={loading}
+                                    className="w-full custom-button font-bold py-3 px-4 rounded disabled:opacity-50"
+                                >
+                                    {loading ? 'Loading...' : 'Generate New Puzzle'}
+                                </button>
+
+                                {solution && !showSolution && (
+                                    <button
+                                        onClick={() => setShowSolution(true)}
+                                        className="w-full custom-button font-bold py-3 px-4 rounded mt-4"
+                                    >
+                                        Show Solution
+                                    </button>
+                                )}
+
+                                {solution && showSolution && (
+                                    <div className="solution-container">
+                                        <div className="flex justify-between space-x-4 mb-4">
+                                            <button
+                                                onClick={handlePrevMove}
+                                                disabled={currentMoveIndex === -1}
+                                                className="custom-button font-bold py-2 px-4 rounded disabled:opacity-50 flex-1"
+                                            >
+                                                ← Previous
+                                            </button>
+                                            <button
+                                                onClick={handleNextMove}
+                                                disabled={currentMoveIndex >= positions.length - 2}
+                                                className="custom-button font-bold py-2 px-4 rounded disabled:opacity-50 flex-1"
+                                            >
+                                                Next →
+                                            </button>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <p className="font-bold">Solution:</p>
+                                            <button
+                                                onClick={() => setShowSolution(false)}
+                                                className="text-sm text-gray-600 hover:text-gray-800"
+                                            >
+                                                Hide Solution
+                                            </button>
+                                        </div>
+                                        <div className="move-list">
+                                            {solution.map((move, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={`move-item ${index === currentMoveIndex ? 'move-active' : ''}`}
+                                                >
+                                                    {formatMove(move, index)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="board-and-controls">
+                            {board && (
+                                <>
+                                    <div className="flex items-center justify-center mb-4">
+                                        <div className="board-wrapper">
+                                            <div className="board-container">
+                                                <div className="ranks-coordinates">
+                                                    {ranks.map((rank, index) => (
+                                                        <div key={rank} className="coordinate">
+                                                            {boardOrientation ? ranks[index] : ranks[7 - index]}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="board-border">
+                                                    <div className="chess-board">
+                                                        {board.map((row, i) => (
+                                                            <div key={i} className="chess-row">
+                                                                {row.map((piece, j) => (
+                                                                    <div
+                                                                        key={`${i}-${j}`}
+                                                                        className={`chess-piece ${(i + j) % 2 === 0 ? 'cell-light' : 'cell-dark'}`}
+                                                                    >
+                                                                        <span className={`${piece && piece.toLowerCase() === piece ? "text-black" : "text-white"}`}>
+                                                                            {getPieceSymbol(piece)}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div></div>
+                                                <div className="files-coordinates">
+                                                    {files.map((file, index) => (
+                                                        <div key={file} className="coordinate">
+                                                            {boardOrientation ? files[7 - index] : files[index]}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {fen && (
+                                        <div className="fen-display">
+                                            <div className="font-bold mb-1">FEN:</div>
+                                            {fen}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+
+        }
+
+        ReactDOM.render(<ChessPuzzleGenerator />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
