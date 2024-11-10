@@ -23,6 +23,25 @@
             --color-dark-square: #B68B4C;
         }
 
+        .lichess-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4A3728;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            width: 94%;
+        }
+
+        .lichess-button:hover {
+            background-color: #654321;
+        }
+
         body {
             background-color: var(--color-background);
             color: var(--color-text);
@@ -47,6 +66,7 @@
         }
 
         .board-wrapper {
+            width: 600px;
             margin: 0 auto;
         }
 
@@ -56,6 +76,11 @@
             border-radius: 0.5rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             width: 100%;
+        }
+
+        .controls-panel h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
         }
 
         .control-group {
@@ -76,11 +101,12 @@
 
         .control-input {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.5rem;
             border: 1px solid var(--color-secondary);
             border-radius: 0.375rem;
             font-size: 1rem;
             transition: border-color 0.2s;
+            height: 36px;
         }
 
         .control-input:focus {
@@ -115,11 +141,18 @@
             font-size: 2.5rem;
             line-height: 1;
             user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
+            position: relative;
+            padding-bottom: 100%;
+        }
+
+        .chess-piece img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 0px;
         }
 
         .cell-light {
@@ -144,7 +177,7 @@
         .coordinate {
             font-size: 0.875rem;
             color: var(--color-primary);
-            height: 24px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -154,6 +187,7 @@
             display: grid;
             grid-template-rows: repeat(8, 1fr);
             aspect-ratio: 1;
+            width: 100%;
         }
 
         .chess-row {
@@ -163,8 +197,8 @@
 
         .board-container {
             display: grid;
-            grid-template-columns: 24px 1fr;
-            grid-template-rows: 1fr 24px;
+            grid-template-columns: 30px 1fr;
+            grid-template-rows: 1fr 30px;
             gap: 4px;
         }
 
@@ -237,10 +271,10 @@
         ];
 
         function ChessPuzzleGenerator() {
-            // Keep existing state declarations
             const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState(null);
             const [board, setBoard] = React.useState(null);
+            const [displayFen, setDisplayFen] = React.useState(null);
             const [fen, setFen] = React.useState(null);
             const [rating, setRating] = React.useState(1500);
             const [solution, setSolution] = React.useState(null);
@@ -250,11 +284,10 @@
             const [boardOrientation, setBoardOrientation] = React.useState(null);
             const [playerMoves, setPlayerMoves] = React.useState(2);
             const [selectedThemes, setSelectedThemes] = React.useState([]);
+            const [showSolution, setShowSolution] = React.useState(false);
 
-            // Add useEffect for auto-play
             React.useEffect(() => {
                 if (positions.length > 0 && currentMoveIndex === -1) {
-                    // Auto-play first move after a short delay
                     const timer = setTimeout(() => {
                         handleNextMove();
                     }, 500);
@@ -262,7 +295,6 @@
                 }
             }, [positions]);
 
-            // Keep existing helper functions
             const calculatePositions = (fen, moves) => {
                 const chess = new Chess(fen);
                 const positions = [fen];
@@ -275,6 +307,10 @@
                 return positions;
             };
 
+            const getLichessAnalysisUrl = (fen) => {
+                return `https://lichess.org/analysis/standard/${encodeURIComponent(fen)}`;
+            };
+
             const fetchNewPuzzle = async () => {
                 setLoading(true);
                 setError(null);
@@ -282,6 +318,7 @@
                 setCurrentMoveIndex(-1);
                 setPositions([]);
                 setShowSolution(false);
+                setDisplayFen(null);
 
                 try {
                     const themesParam = selectedThemes.length > 0
@@ -317,6 +354,10 @@
 
                         const newPositions = calculatePositions(puzzle.fen, puzzle.moves);
                         setPositions(newPositions);
+
+                        if (newPositions.length >= 2) {
+                            setDisplayFen(newPositions[1]);
+                        }
                     } else {
                         throw new Error('No puzzle data received');
                     }
@@ -326,7 +367,6 @@
                     setLoading(false);
                 }
             };
-
 
             const handlePrevMove = () => {
                 if (currentMoveIndex > -1) {
@@ -378,10 +418,22 @@
             const getPieceSymbol = (piece) => {
                 if (!piece) return null;
 
+
                 const pieces = {
-                    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
-                    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+                    'K': 'wk.png',
+                    'Q': 'wq.png',
+                    'R': 'wr.png',
+                    'B': 'wb.png',
+                    'N': 'wn.png',
+                    'P': 'wp.png',
+                    'k': 'bk.png',
+                    'q': 'bq.png',
+                    'r': 'br.png',
+                    'b': 'bb.png',
+                    'n': 'bn.png',
+                    'p': 'bp.png'
                 };
+
                 return pieces[piece];
             };
 
@@ -416,9 +468,6 @@
                 return move;
             };
 
-            const [showSolution, setShowSolution] = React.useState(false);
-
-
             return (
                 <div className="app-container">
                     <h1 className="text-4xl font-bold text-center mb-8 text-primary">Chess Puzzles</h1>
@@ -432,6 +481,8 @@
                     <div className="content-grid">
                         <div className="controls-panel">
                             <div className="space-y-6">
+                                <h1 className="text-xl font-bold text-center mb-6">Chess Puzzles</h1>
+
                                 <div className="control-group">
                                     <label className="control-label" htmlFor="rating">
                                         Puzzle Rating (600-3000)
@@ -562,9 +613,13 @@
                                                                         key={`${i}-${j}`}
                                                                         className={`chess-piece ${(i + j) % 2 === 0 ? 'cell-light' : 'cell-dark'}`}
                                                                     >
-                                                                        <span className={`${piece && piece.toLowerCase() === piece ? "text-black" : "text-white"}`}>
-                                                                            {getPieceSymbol(piece)}
-                                                                        </span>
+                                                                        {piece && (
+                                                                            <img
+                                                                                src={`${getPieceSymbol(piece)}`}
+                                                                                alt={piece}
+                                                                                className="piece-image"
+                                                                            />
+                                                                        )}
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -583,10 +638,18 @@
                                         </div>
                                     </div>
 
-                                    {fen && (
+                                    {displayFen && (
                                         <div className="fen-display">
                                             <div className="font-bold mb-1">FEN:</div>
-                                            {fen}
+                                            {displayFen}
+                                            <a
+                                                href={getLichessAnalysisUrl(displayFen)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="lichess-button"
+                                            >
+                                                View on Lichess
+                                            </a>
                                         </div>
                                     )}
                                 </>
@@ -595,7 +658,6 @@
                     </div>
                 </div>
             );
-
         }
 
         ReactDOM.render(<ChessPuzzleGenerator />, document.getElementById('root'));
