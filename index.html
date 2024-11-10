@@ -256,7 +256,22 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Define themes constant
+
+        const PIECE_URLS = {
+    'K': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wk.png',
+    'Q': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wq.png',
+    'R': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wr.png',
+    'B': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wb.png',
+    'N': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wn.png',
+    'P': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wp.png',
+    'k': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bk.png',
+    'q': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bq.png',
+    'r': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/br.png',
+    'b': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bb.png',
+    'n': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bn.png',
+    'p': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bp.png'
+};
+        
         const THEMES = [
             "advancedPawn", "advantage", "anastasiaMate", "arabianMate", "attackingF2F7",
             "attraction", "backRankMate", "bishopEndgame", "bodenMate", "castling",
@@ -271,6 +286,7 @@
         ];
 
         function ChessPuzzleGenerator() {
+            const [imagesLoaded, setImagesLoaded] = React.useState(false);
             const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState(null);
             const [board, setBoard] = React.useState(null);
@@ -287,6 +303,40 @@
             const [selectedThemes, setSelectedThemes] = React.useState([]);
             const [showSolution, setShowSolution] = React.useState(false);
 
+
+            React.useEffect(() => {
+                    let loadedImages = 0;
+                    const totalImages = Object.keys(PIECE_URLS).length;
+            
+                    const preloadImage = (url) => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.src = url;
+                            img.onload = () => {
+                                loadedImages++;
+                                if (loadedImages === totalImages) {
+                                    setImagesLoaded(true);
+                                }
+                                resolve();
+                            };
+                            img.onerror = reject;
+                        });
+                    };
+            
+                    const preloadAllImages = async () => {
+                        try {
+                            await Promise.all(Object.values(PIECE_URLS).map(preloadImage));
+                        } catch (error) {
+                            console.error('Error preloading images:', error);
+                            // Still set images as loaded to not block the UI
+                            setImagesLoaded(true);
+                        }
+                    };
+            
+                    preloadAllImages();
+                }, []);
+            
+            
             React.useEffect(() => {
                 if (positions.length > 0 && currentMoveIndex === -1) {
                     const timer = setTimeout(() => {
@@ -416,24 +466,10 @@
                 return board;
             };
 
-            const getPieceSymbol = (piece) => {
-                if (!piece) return null;
-
-
-                const pieces = {
-                    'K': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wk.png',
-                    'Q': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wq.png',
-                    'R': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wr.png',
-                    'B': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wb.png',
-                    'N': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wn.png',
-                    'P': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/wp.png',
-                    'k': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bk.png',
-                    'q': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bq.png',
-                    'r': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/br.png',
-                    'b': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bb.png',
-                    'n': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bn.png',
-                    'p': 'https://raw.githubusercontent.com/RamziC/Chess-Puzzles/main/bp.png'
-                };
+                const getPieceSymbol = (piece) => {
+        if (!piece) return null;
+        return PIECE_URLS[piece];
+    };
 
                 return pieces[piece];
             };
@@ -451,6 +487,19 @@
                 }
             };
 
+            if (!imagesLoaded) {
+        return <LoadingScreen />;
+    }
+
+const LoadingScreen = () => (
+        <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
+                <p className="text-lg font-semibold">Loading chess pieces...</p>
+            </div>
+        </div>
+    );
+        
             const handleRatingBlur = () => {
                 const numValue = parseInt(ratingInput);
                 if (isNaN(numValue)) {
